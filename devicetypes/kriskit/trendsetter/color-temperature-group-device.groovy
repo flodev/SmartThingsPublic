@@ -1,5 +1,5 @@
 /**
- *  Trend Setter - Dimmer Group Device
+ *  Trend Setter - Color Temperature Group Device
  *
  *  Copyright 2017 Florian Biewald
  *  mostly copied from ./dimmer-group-device.groovy
