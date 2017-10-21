@@ -22,7 +22,7 @@ definition(
     iconUrl: "https://cdn.rawgit.com/Kriskit/SmartThingsPublic/master/smartapps/kriskit/trendsetter/icon.png",
     iconX2Url: "https://cdn.rawgit.com/Kriskit/SmartThingsPublic/master/smartapps/kriskit/trendsetter/icon@2x.png",
     iconX3Url: "https://cdn.rawgit.com/Kriskit/SmartThingsPublic/master/smartapps/kriskit/trendsetter/icon@3x.png")
-    
+
 def version() {
 	return "1.0"
 }
@@ -30,22 +30,33 @@ def version() {
 def typeDefinitions() {
 	return [
         [
-        	type: "switch", 
-            singular: "Switch", 
-            plural: "Switches", 
+        	type: "switch",
+            singular: "Switch",
+            plural: "Switches",
             deviceType: "Switch Group Device",
             attributes: [
             		[name: "switch"]
             	]
         ],
         [
-        	type: "switchLevel", 
-            singular: "Dimmer", 
-            plural: "Dimmers", 
+        	type: "switchLevel",
+            singular: "Dimmer",
+            plural: "Dimmers",
             deviceType: "Dimmer Group Device",
             inherits: "switch",
             attributes: [
             	[name: "level"]
+            ]
+        ],
+        [
+        	type: "colorTemperature",
+            singular: "Color Temperature Light",
+            plural: "Color Temperature Lights",
+            deviceType: "Color Temperature Group Device",
+            inherits: "switch",
+            attributes: [
+            	[name: "switchLevel"],
+            	[name: "colorTemperature"]
             ]
         ],
         [
@@ -81,34 +92,34 @@ def configure() {
 	atomicState.typeDefinitions = null
 	def controller = getControllerDevice();
 
-	dynamicPage(name: "configure", uninstall: controller != null, install: true) {   
+	dynamicPage(name: "configure", uninstall: controller != null, install: true) {
         if (!controller) {
-           section {              
+           section {
 				input "deviceType", "enum", title: "Device Type", required: true, submitOnChange: true, options: getDeviceTypeOptions()
                 paragraph "This cannot be changed once the group is created.", color: "#ffcc00"
             }
         }
-        
+
         if (deviceType) {
            	def definition = getTypeDefinition(deviceType)
-        
+
             section(title: controller == null ? "Grouping" : null) {
         		label title: "Group Name", required: true
-            
+
                 input "devices", "capability.${deviceType}", title: "${definition.plural}", multiple: true, required: true, submitOnChange: controller != null
 
                 if (selectedDevicesContainsController()) {
-                    paragraph "WARNING: You have selected the controller ${definition.singular.toLowerCase()} for this group. This will likely cause unexpected behaviour.\n\nPlease uncheck the '${controller.displayName}' from the selected ${definition.plural.toLowerCase()}.", 
+                    paragraph "WARNING: You have selected the controller ${definition.singular.toLowerCase()} for this group. This will likely cause unexpected behaviour.\n\nPlease uncheck the '${controller.displayName}' from the selected ${definition.plural.toLowerCase()}.",
                         image: "https://cdn2.iconfinder.com/data/icons/freecns-cumulus/32/519791-101_Warning-512.png"
                 }
             }
-            
+
 			if (controller == null) {
-                section(title: "Controller") {                        
+                section(title: "Controller") {
                     input "deviceName", "text", title: "${definition.singular} Name", required: true, description: "For the controlling virtual ${definition.singular.toLowerCase()} to be created"
                 }
             }
-            
+
             if (definition.advanced) {
             	section(title: "Advanced", hidden: true, hideable: true) {
                 }
@@ -119,7 +130,7 @@ def configure() {
 
 def installed() {
 	log.debug "Installed with settings: ${settings}"
-    
+
 	installControllerDevice()
 	initialize()
 }
@@ -162,7 +173,7 @@ def onDeviceAttributeChange(evt) {
 
     if (!namesToCheck.any { it == evt.name })
     	namesToCheck.push(evt.name)
-        
+
 	atomicState.namesToCheck = namesToCheck
     runIn(1, "updateControllerState")
 }
@@ -187,7 +198,7 @@ def updateControllerState(namesToCheck) {
 }
 
 def performGroupCommand(command, arguments = null) {
-	runCommand(devices, command, arguments ?: []) 
+	runCommand(devices, command, arguments ?: [])
 }
 
 def runCommand(target, command, args) {
@@ -213,16 +224,16 @@ def getTypeDefinitions() {
 
 	def result = []
 	def definitions = typeDefinitions()
-    
+
     definitions?.each { definition ->
     	if (definition.inherits)
         	definition = mergeAttributes(definition, definitions.find { it.type == definition.inherits })
-    
+
     	result.push(definition)
     }
-    
+
     atomicState.typeDefinitions = result
-    
+
     return result
 }
 
@@ -231,12 +242,12 @@ def mergeAttributes(definition, inheritedDefinition) {
     	if (!definition.attributes?.any { it.name == attr.name })
         	definition.attributes.push(attr)
     }
-    
+
     if (inheritedDefinition.inherits) {
     	def definitions = typeDefinitions()
     	definition = mergeAttributes(definition, definitions.find { it.type == inheritedDefinition.inherits })
 	}
-    
+
     return definition
 }
 
@@ -262,50 +273,50 @@ def getDeviceTypeOptions() {
 
 def selectedDevicesContainsController() {
 	def controller = getControllerDevice()
-	return devices?.any { 
-    	it.deviceNetworkId == controller.deviceNetworkId 
+	return devices?.any {
+    	it.deviceNetworkId == controller.deviceNetworkId
     }
 }
 
 private $performCommand(target, command, args) {
     switch(args?.size()) {
-    	default: 
+    	default:
         	target?."$command"()
         break
-    
-    	case 1: 
+
+    	case 1:
         	target?."$command"(args[0])
         break
-        
-		case 2: 
+
+		case 2:
         	target?."$command"(args[0], args[1])
         break
-        
-		case 3: 
+
+		case 3:
         	target?."$command"(args[0], args[1], args[2])
         break
-        
-		case 4: 
+
+		case 4:
         	target?."$command"(args[0], args[1], args[2], args[3])
         break
-        
-		case 5: 
+
+		case 5:
         	target?."$command"(args[0], args[1], args[2], args[3], args[4], args[5])
         break
-        
-		case 6: 
+
+		case 6:
         	target?."$command"(args[0], args[1], args[2], args[3], args[4], args[5], args[6])
         break
-        
-        case 7: 
+
+        case 7:
         	target?."$command"(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7])
         break
-        
-        case 8: 
+
+        case 8:
         	target?."$command"(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8])
         break
-        
-        case 9: 
+
+        case 9:
         	target?."$command"(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9])
         break
     }
