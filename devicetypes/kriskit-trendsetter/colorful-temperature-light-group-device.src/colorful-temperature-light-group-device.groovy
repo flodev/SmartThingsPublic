@@ -14,7 +14,7 @@
  *
  */
 metadata {
-	definition (name: "Colorful Temperature Light Group Device", namespace: "kriskit-trendsetter", author: "Chris Kitch") {
+	definition (name: "Colorful Temperature Light Group Device", namespace: "kriskit-trendsetter", author: "Chris Kitch", vid: "generic-rgb-color-bulb") {
 		capability "Actuator"
 		capability "Sensor"
 		capability "Switch"
@@ -133,6 +133,14 @@ metadata {
             state "default", label:' Sync ', unit:"", action: "resetHue", backgroundColor: "#ff9900"
             state "ok", label:'', unit:"", backgroundColor: "#00b509"
         }
+        
+       	standardTile("onButton", "onButton", height:1, width:3, decoration: "flat", inactiveLabel: true) {
+            state "default", action: "switch.on", label:"On", unit:""
+        }
+        
+        standardTile("offButton", "offButton", height:1, width:3, decoration: "flat", inactiveLabel: true) {
+            state "default", action: "switch.off", label:"Off", unit:""
+        }
 	}
     
     main "switch"
@@ -153,7 +161,9 @@ metadata {
         "hueLabel",
         "hueSliderControl",
         "hueValue",
-        "hueSync"])
+        "hueSync",
+        "onButton",
+        "offButton"])
 }
 
 def parse(String description) {
@@ -420,14 +430,14 @@ def setColor(value) {
 }
 
 def setColor(value, triggerGroup) {
-	value.level = null
+	value.level = device.currentValue("level")
     
     def hex = value.hex
     
     if (!hex && value.hue && value.saturation)
-		hex = colorUtil.hslToHex(value.hue, value.saturation)
+		hex = colorUtil.hslToHex((int)value.hue, (int)value.saturation)
         
-	sendEvent(name: "color", value: value.hex, displayed:false)
+	sendEvent(name: "color", value: hex, displayed:false)
     
     if (triggerGroup)
     	parent.performGroupCommand("setColor", [value])
